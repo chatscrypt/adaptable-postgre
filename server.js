@@ -45,11 +45,18 @@ function easyRequest(url, options) {
         req.end();
     });
 }
+
+function easyParse(req) {
+    return new Promise((resolve, reject) => {
+      let body = '';
+      req.on('data', buffer => { body += buffer.toString(); });
+      req.on('end', () => { resolve(body); });
+    });
+}
+
 const keepAliveAgent = new https.Agent({ keepAlive: true, maxSockets:1, keepAliveMses:10000 });
 
 http.createServer(async (req, res) => {
-      console.log(req.url.substring(1), req.method)
-  console.log(req.headers['access-control-request-headers'])
   res.setHeader('Content-Type', 'application/json');         
   res.setHeader('Access-Control-Allow-Origin', '*');      
   res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers'] || '*');
@@ -62,12 +69,12 @@ http.createServer(async (req, res) => {
       file.stream.pipe(res);
       console.log(`${req.method} ${req.url} ${statusCode}`);
     } else {
-      let options = req.headers.string && JSON.parse(req.headers.string);
-      if (options && options.body && !(options.headers && options.headers['content-type'])) {
-        options.headers['content-type'] = "application/x-www-form-urlencoded";
-        options.body = new URLSearchParams(JSON.parse(options.body)).toString();
-      }
-      easyRequest(req.url.substring(1), options).then(function(data) {
+    //  console.log(req.url.substring(1), req.method);
+      let body = await easyParse(req);
+      let headers = req.headers.string && JSON.parse(req.headers.string);
+      if (body && !(headers && headers['content-type']))
+        headers['content-type'] = "application/x-www-form-urlencoded";
+      easyRequest(req.url.substring(1), {headers, method:req.method, body}).then(function(data) {
         try { res.write(data); }
         catch { res.write(JSON.stringify(data)); }
         res.end();
