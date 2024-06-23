@@ -93,8 +93,11 @@ http.createServer(async (req, res) => {
       let aesBody = await easyParse(req);
       let {url, parameters} = await decrypt(proxyKey, JSON.parse(aesBody));
       easyRequest(url, parameters || {method:"GET"}, res).then(function(data) {
-        res.write(data);
-        res.end();
+        encrypt(proxyKey, data.toString()).then(function(cipher) {
+          res.setHeader('Content-Type', 'application/json');
+          res.write(JSON.stringify(cipher));
+          res.end();
+        });
       });
     } else {
     //  console.log(req.url.substring(1), req.method);
