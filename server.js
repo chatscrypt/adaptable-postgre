@@ -36,8 +36,8 @@ function easyRequest(url, options, mainRes) {
             res.on('data', function(data) { chunks.push(data); });
             res.on('end', function() {
                 let resBody = Buffer.concat(chunks);
-                if (res.headers['content-type'] == 'application/json')
-                  mainRes.setHeader('Content-Type', 'application/json');  
+                if (res.headers['content-type'].includes('application/json'))
+                  mainRes.setHeader('Content-Type', 'application/json');
                 resolve(resBody);
             })
         });
