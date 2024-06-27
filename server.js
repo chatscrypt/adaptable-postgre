@@ -35,10 +35,10 @@ function easyRequest(url, options, mainRes) {
             const chunks = [];
             res.on('data', function(data) { chunks.push(data); });
             res.on('end', function() {
-                let resBody = Buffer.concat(chunks);
-                if (res.headers['content-type'].includes('application/json'))
+                let contentType = res.headers['content-type'] || res.headers['Content-Type'];
+                if (contentType && contentType.includes('application/json'))
                   mainRes.setHeader('Content-Type', 'application/json');
-                resolve(resBody);
+                resolve(Buffer.concat(chunks));
             })
         });
         req.on('error', reject);
@@ -103,9 +103,11 @@ http.createServer(async (req, res) => {
     //  console.log(req.url.substring(1), req.method);
       let body = await easyParse(req);
       let headers = req.headers.string && JSON.parse(req.headers.string);
-      if (body && !(headers && headers['content-type']))
+      if (body && !(headers && (headers['content-type'] || headers['Content-Type'])))
         headers['content-type'] = "application/x-www-form-urlencoded";
+     // console.log(req.url.substring(1), {headers, method:req.method, body}, !body)
       easyRequest(req.url.substring(1), {headers, method:req.method, body}, res).then(function(data) {
+     //   console.log("return", data.toString())
         res.write(data);
         res.end();
       });
